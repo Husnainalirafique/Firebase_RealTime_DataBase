@@ -17,6 +17,7 @@ class NoteViewModel : ViewModel() {
         fetchNotes()
     }
 
+
     fun getNotesList(): LiveData<List<Note>> {
         return notesListLiveData
     }
@@ -31,10 +32,11 @@ class NoteViewModel : ViewModel() {
         dbRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val notesList: MutableList<Note> = mutableListOf()
-                for (note in snapshot.children) {
-                    val title = note.child("noteTitle").getValue(String::class.java)
-                    val description = note.child("noteDescription").getValue(String::class.java)
-                    notesList.add(Note(title, description))
+                for (noteSnap in snapshot.children) {
+                    val note = noteSnap.getValue(Note::class.java)
+                    note?.let {
+                        notesList.add(Note(it.noteTitle,it.noteDescription))
+                    }
                 }
                 notesListLiveData.value = notesList
             }
@@ -43,5 +45,13 @@ class NoteViewModel : ViewModel() {
                 // Handle errors here
             }
         })
+    }
+
+    private fun readOnce(){
+        database.child("Notes").get().addOnSuccessListener {
+
+        }.addOnFailureListener {
+
+        }
     }
 }
