@@ -16,7 +16,7 @@ import com.google.firebase.ktx.Firebase
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var noteAdapter: NoteAdapter
-    private lateinit var database : DatabaseReference
+    private lateinit var database: DatabaseReference
     private val notesList: MutableList<Note> = mutableListOf()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,27 +53,29 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun fetchNotes(){
-        val postListener = object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+    private fun fetchNotes() {
+        database.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
                 notesList.clear()
-                for (note in dataSnapshot.children){
+                for (note in snapshot.children) {
                     val title = note.child("title").getValue(String::class.java)
                     val description = note.child("description").getValue(String::class.java)
-                    notesList.add(Note(title,description))
+                    notesList.add(Note(title, description))
                 }
                 noteAdapter.submitList(notesList)
             }
-            override fun onCancelled(databaseError: DatabaseError) {
 
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(this@MainActivity, error.toString(), Toast.LENGTH_SHORT).show()
             }
-        }
-        database.addValueEventListener(postListener)
+        })
     }
 
     private fun settingUpRecyclerView() {
         binding.recyclerView.apply {
-            layoutManager = LinearLayoutManager(this@MainActivity, LinearLayoutManager.VERTICAL, false)
+            layoutManager =
+                LinearLayoutManager(this@MainActivity, LinearLayoutManager.VERTICAL, false)
             adapter = noteAdapter
         }
     }
@@ -83,3 +85,5 @@ class MainActivity : AppCompatActivity() {
         binding.unbind()
     }
 }
+
+
