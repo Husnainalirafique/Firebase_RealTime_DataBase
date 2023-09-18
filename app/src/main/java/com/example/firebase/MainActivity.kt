@@ -25,8 +25,8 @@ class MainActivity : AppCompatActivity() {
         database = Firebase.database.reference.child("Notes")
 
         settingUpRecyclerView()
-        fetchNotes()
         addNote()
+        fetchNotes()
 
     }
 
@@ -43,6 +43,7 @@ class MainActivity : AppCompatActivity() {
                 notesRef.setValue(noteData)
                 notesList.add(Note(title.toString(), description.toString()))
                 noteAdapter.notifyItemInserted(notesList.size - 1)
+
                 title.clear()
                 description.clear()
             } else {
