@@ -6,69 +6,74 @@ import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.firebase.databinding.ActivityMainBinding
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
-import com.google.firebase.remoteconfig.ConfigUpdate
-import com.google.firebase.remoteconfig.ConfigUpdateListener
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigException
-import com.google.firebase.remoteconfig.ktx.remoteConfig
-import com.google.firebase.remoteconfig.ktx.remoteConfigSettings
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var noteAdapter: NoteAdapter
+    private lateinit var database : DatabaseReference
+    private val notesList: MutableList<Note> = mutableListOf()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
-
         noteAdapter = NoteAdapter()
-        setOnClickListener()
+        database = Firebase.database.reference.child("Notes")
+
         settingUpRecyclerView()
-        firebaseRemoteConfig()
+        fetchNotes()
+        addNote()
 
     }
 
-    private fun firebaseRemoteConfig() {
-        val remoteConfig = Firebase.remoteConfig
-        remoteConfig.apply {
-            setConfigSettingsAsync(remoteConfigSettings { minimumFetchIntervalInSeconds =  3600})
-            setDefaultsAsync(R.xml.remote_config_defaults)
-            fetchAndActivate().addOnCompleteListener(this@MainActivity) { task ->
-                if (task.isSuccessful) {
-                    val addNoteBtnText = remoteConfig.getString("ADD_NOTE_KEY")
-                    binding.button.text = addNoteBtnText
-                }
+    private fun addNote() {
+        binding.button.setOnClickListener {
+            val title = binding.editText.text
+            val description = binding.editText2.text
+            if (title.toString().isNotEmpty() && description.toString().isNotEmpty()) {
+                val notesRef = database.push() // Generate a unique key
+                val noteData = mapOf(
+                    "title" to title.toString(),
+                    "description" to description.toString()
+                )
+                notesRef.setValue(noteData)
+                notesList.add(Note(title.toString(), description.toString()))
+                noteAdapter.notifyItemInserted(notesList.size - 1)
+                title.clear()
+                description.clear()
+            } else {
+                Toast.makeText(this@MainActivity, "Fill Both fields", Toast.LENGTH_SHORT).show()
             }
         }
-        remoteConfig.addOnConfigUpdateListener(object : ConfigUpdateListener {
-            override fun onUpdate(configUpdate : ConfigUpdate) {
-                if (configUpdate.updatedKeys.contains("ADD_NOTE_KEY")) {
-                    remoteConfig.activate().addOnCompleteListener {
-                        binding.button.text = remoteConfig.getString("ADD_NOTE_KEY")
-                    }
-                }
-            }
-            override fun onError(error : FirebaseRemoteConfigException) {
-                Toast.makeText(this@MainActivity, "error", Toast.LENGTH_SHORT).show()
-            }
-        })
+
     }
 
-    private fun setOnClickListener() {
+    private fun fetchNotes(){
+        val postListener = object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                notesList.clear()
+                for (note in dataSnapshot.children){
+                    val title = note.child("title").getValue(String::class.java)
+                    val description = note.child("description").getValue(String::class.java)
+                    notesList.add(Note(title,description))
+                }
+                noteAdapter.submitList(notesList)
+            }
+            override fun onCancelled(databaseError: DatabaseError) {
 
+            }
+        }
+        database.addValueEventListener(postListener)
     }
 
     private fun settingUpRecyclerView() {
-        val note = listOf(
-            Note("a", "Note"),
-            Note("b", "Note2")
-        )
-        noteAdapter.submitList(note)
         binding.recyclerView.apply {
-            layoutManager =
-                LinearLayoutManager(this@MainActivity, LinearLayoutManager.VERTICAL, false)
+            layoutManager = LinearLayoutManager(this@MainActivity, LinearLayoutManager.VERTICAL, false)
             adapter = noteAdapter
-
         }
     }
 
