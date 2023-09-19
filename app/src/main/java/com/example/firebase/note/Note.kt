@@ -1,4 +1,4 @@
-package com.example.firebase
+package com.example.firebase.note
 
 data class Note(
     val noteTitle: String?,

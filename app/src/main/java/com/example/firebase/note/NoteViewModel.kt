@@ -1,4 +1,4 @@
-package com.example.firebase
+package com.example.firebase.note
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
