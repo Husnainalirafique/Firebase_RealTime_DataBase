@@ -23,6 +23,7 @@ class MainActivity : AppCompatActivity() {
         setupRecyclerView()
         addNotes()
         observeNotes()
+        deleteAllNotes()
     }
 
     private fun addNotes() {
@@ -36,6 +37,13 @@ class MainActivity : AppCompatActivity() {
             } else {
                 Toast.makeText(this@MainActivity, "Fill both!", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+
+    private fun deleteAllNotes(){
+        binding.buttonDelete.setOnClickListener {
+            noteViewModel.deleteAllNotes()
         }
     }
 
